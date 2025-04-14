@@ -1,7 +1,5 @@
 # RAG-Ollama-JS
 
-https://github.com/user-attachments/assets/e75e3571-098d-4654-b000-5fd23142f64f
-
 ## Introduction
 RAG-Ollama-JS is a Next.js application that implements Retrieval-Augmented Generation (RAG) using LangChain.js, Ollama, and Supabase. This project provides a user-friendly interface for document-based question-answering with PDF support. It also supports secured RAG with embeddings used only for logged in users.
 
@@ -18,37 +16,35 @@ RAG-Ollama-JS is a Next.js application that implements Retrieval-Augmented Gener
 ## Prerequisites
 - Node.js (Latest LTS version)
 - Ollama running locally or remotely
-- Supabase account and project
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/AbhisekMishra/rag-ollama-js.git
-cd rag-ollama-js
+git clone https://github.com/olivestory-corp/rag-ollama-nextjs.git
+cd rag-ollama-nextjs
 ```
 
 2. Install dependencies:
 ```bash
 npm install
+npm rebuild better-sqlite3
 ```
 
 3. Configure environment variables:
    - Copy `env.example` to `.env`
    - Update the following variables:
 ```plaintext
-SUPABASE_API_KEY=your_supabase_api_key
 SUPABASE_URL=your_supabase_project_url
-OLLAMA_LLM_BASE_URL=http://localhost:11434
+OLLAMA_LLM_BASE_URL=exaone3.5:latest
 OLLAMA_LLM_MODEL=your_preferred_model
 OLLAMA_EMBEDDINGS_BASE_URL=http://localhost:11434
-OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+OLLAMA_EMBEDDINGS_MODEL=exaone3.5:latest
 ```
-4. Run the supabase commands mentioned in **[`supabaseScripts.txt`](https://github.com/AbhisekMishra/rag-ollama-js/blob/main/supabaseScripts.txt)**
 
 5. Start the development server:
 ```bash
-npm run dev
+npm run electron:dev
 ```
 
 ## Usage
@@ -83,7 +79,7 @@ src/
 ├── app/
 │   ├── api/         # API routes for chat and document handling
 │   ├── home/        # Main application page
-│   ├── lib/         # Core libraries (Ollama, Supabase, prompts)
+│   ├── lib/         # Core libraries (Ollama, prompts)
 │   └── utils/       # Helper functions and environment config
 ```
 
