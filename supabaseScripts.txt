@@ -1,0 +1,92 @@
+-- Enable the pgvector extension to work with embedding vectors
+-- create extension vector;
+
+-- Create a table to store your documents
+create table documents (
+  id serial primary key, --bigserial
+  content text, -- corresponds to Document.pageContent
+  metadata jsonb, -- corresponds to Document.metadata
+  embedding vector(768) -- 768 works for ollama embeddings, change if needed
+);
+
+-- Create a function to search for documents
+create function match_documents (
+  query_embedding vector(768),
+  match_count int DEFAULT null,
+  filter jsonb DEFAULT '{}'
+) returns table (
+  id bigint,
+  content text,
+  metadata jsonb,
+  embedding jsonb,
+  similarity float
+)
+language plpgsql
+as $$
+#variable_conflict use_column
+begin
+  return query
+  select
+    id,
+    content,
+    metadata,
+    (embedding::text)::jsonb as embedding,
+    1 - (documents.embedding <=> query_embedding) as similarity
+  from documents
+  where metadata @> filter
+  order by documents.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Create a table to add users
+create table users (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  firstName text, -- corresponds to User.firstName
+  lastName text, -- corresponds to User.lastName
+  username text unique, -- corresponds to User.username
+  password varchar
+);
+
+-- Create function hash_password_trigger to hash the password before insert
+CREATE OR REPLACE FUNCTION hash_password_trigger()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.password = crypt(NEW.password, gen_salt('bf'));
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER before_insert_or_update
+BEFORE INSERT OR UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION hash_password_trigger();
+
+-- Create function for authentication
+CREATE OR REPLACE FUNCTION verify_password (input_username TEXT, input_password TEXT) RETURNS RECORD AS $$
+DECLARE
+    user_record RECORD;
+BEGIN
+    SELECT u.firstname, u.lastname, u.username
+    INTO user_record
+    FROM users u
+    WHERE u.username = input_username
+    AND u.password = crypt(input_password, u.password);
+
+    IF user_record IS NULL THEN
+        RAISE EXCEPTION 'Invalid username or password';
+    END IF;
+
+    RETURN user_record;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to delete documents by userid
+CREATE OR REPLACE FUNCTION delete_documents_by_user(userid TEXT)
+RETURNS VOID AS $$
+BEGIN
+    DELETE FROM documents
+    WHERE metadata @> FORMAT('{"userId": "%s"}', userId)::JSONB;
+END;
+$$ LANGUAGE plpgsql;
